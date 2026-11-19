@@ -1,4 +1,11 @@
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
+import { PrototypeSwitcher } from "~/components/prototype-switcher";
+import {
+  FEED_VARIANTS,
+  FeedA_HeaderBell,
+  FeedB_NavDrawer,
+  FeedC_SidebarSection,
+} from "~/components/notifications-prototype/feed-variants";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
 import { DevUI } from "~/components/dev-ui";
@@ -227,12 +234,28 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
     isTeamAdmin: userIsTeamAdmin,
   } = loaderData;
 
+  // PROTOTYPE (ticket #11): Notification Feed variants via ?variant=
+  const [params] = useSearchParams();
+  const variant = params.get("variant") ?? "A";
+  const feedProps = {
+    role: currentUser?.role ?? null,
+    isTeamAdmin: userIsTeamAdmin,
+  };
+  const feedSlots = !currentUser
+    ? {}
+    : variant === "B"
+      ? { navTopSlot: <FeedB_NavDrawer {...feedProps} /> }
+      : variant === "C"
+        ? { sectionSlot: <FeedC_SidebarSection {...feedProps} /> }
+        : { headerSlot: <FeedA_HeaderBell {...feedProps} /> };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         currentUser={currentUser}
         recentCourses={recentCourses}
         isTeamAdmin={userIsTeamAdmin}
+        {...feedSlots}
       />
       <main className="flex-1 overflow-y-auto">
         <Outlet />
@@ -244,6 +267,7 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
         countryTierInfo={countryTierInfo}
         countries={countries}
       />
+      <PrototypeSwitcher variants={FEED_VARIANTS} />
       <Toaster position="bottom-right" richColors closeButton />
     </div>
   );

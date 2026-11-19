@@ -1,5 +1,10 @@
 import { useRef, useEffect } from "react";
-import { useFetcher } from "react-router";
+import { useFetcher, useRouteLoaderData, useSearchParams } from "react-router";
+import {
+  PrefsA_Grid,
+  PrefsB_Cards,
+  PrefsC_ByChannel,
+} from "~/components/notifications-prototype/settings-variants";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { Route } from "./+types/settings";
@@ -104,6 +109,20 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   ).length;
   const fetcher = useFetcher();
   const nameInputRef = useRef<HTMLInputElement>(null);
+  // PROTOTYPE (ticket #11): Notifications section variants via ?variant=
+  const [params] = useSearchParams();
+  const variant = params.get("variant") ?? "A";
+  const layoutData = useRouteLoaderData("routes/layout.app") as
+    | { isTeamAdmin: boolean }
+    | undefined;
+  const prefsProps = {
+    role: user.role,
+    isTeamAdmin: layoutData?.isTeamAdmin ?? false,
+  };
+  useEffect(() => {
+    if (window.location.hash === "#notifications")
+      document.getElementById("notifications")?.scrollIntoView();
+  }, [variant]);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.success) {
@@ -187,6 +206,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </fetcher.Form>
         </CardContent>
       </Card>
+
+      {variant === "B" ? (
+        <PrefsB_Cards {...prefsProps} />
+      ) : variant === "C" ? (
+        <PrefsC_ByChannel {...prefsProps} />
+      ) : (
+        <PrefsA_Grid {...prefsProps} />
+      )}
 
       {refundRequests.length > 0 && (
         <Card className="mt-8 max-w-md">
